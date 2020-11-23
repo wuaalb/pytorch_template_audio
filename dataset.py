@@ -7,60 +7,38 @@ import soundfile as sf
 
 # load file list text file
 # comments are escaped using '#'
-# files with multiple columns require a mandatory initial comment listing names of columns (e.g. '# mix vocals')
-# columns are separated by '\t' (not spaces), so file names can have spaces
-# file names should be relative to path of file list, and not have an extension
-# returns list of dicts (multicol=True) or list (multicol=False)
-def load_file_list(fn_filelist_txt, multicol=True):
+# file names should be relative to path of the file list
+# in case each example corresponds to multiple files, this can be handled by
+# omitting extensions in the file list or using only the 'root' part of the file names,
+# and let the Dataset load the corresponding files with different extensions and/or suffixes
+def load_file_list(fn_filelist_txt):
     fn_filelist_txt = Path(fn_filelist_txt)
     root_dir = fn_filelist_txt.parent
 
-    examples = []  # list of dicts, or list
+    examples = []
     with open(fn_filelist_txt, 'r') as f:
-        # read lines
-        lns = [ln.strip() for ln in f.readlines()]
-
-        # read header
-        if multicol:
-            header = lns[0]
-            lns = lns[1:]
-            if not header.startswith('#'):
-                raise IOError('file list should have comment header containing instrument names')
-            header = header[1:].strip()  # strip escape and leading (and trailing) whitespace
-            #instruments = header.split()  # NOTE: assume instruments are separated by whitespace (that is, whitespace is not allowed in instrument names)
-            instruments = header.split('\t')  # NOTE: assume instruments are separated by tab (that is, spaces are allowed in instrument names)
-
-        # read file list
-        for ln in lns:  # header already skipped above
+        for ln in f:
             # handle comment
             b_comment = ln.find('#')
             if b_comment >= 0:
-                ln = ln[:b_comment].strip()
+                ln = ln[:b_comment]
+                
+            # strip white space
+            ln = ln.strip()
 
+            # skip empty lines (e.g. entire line is comment)
             if len(ln) == 0:
-                continue  # entire line is comment
+                continue
 
-            # split columns, convert to full filenames
-            if multicol:
-                #cols = ln.split()  # NOTE: assume files are separated by whitespace (that is, whitespace is not allowed in filenames)
-                cols = ln.split('\t')  # NOTE: assume instruments are separated by tab (that is, spaces are allowed in filenames)
-
-                if len(cols) != len(instruments):
-                    raise IOError('number of columns in line does not match header')
-
-                cols = [str(root_dir / col) for col in cols]  # full name without extension
-
-                example = dict(zip(instruments, cols))
-                examples.append(example)
-            else:
-                example = str(root_dir / ln)
-                examples.append(example)
+            # add example to list
+            example = str(root_dir / ln)
+            examples.append(example)
     
     return examples
 
 
 class WavDataset(torch.utils.data.Dataset):
-    # file_list list (full_filename_no_ext), or list of dicts (instrument_name: full_filename_no_ext)
+    # file_list list (full filename without extension)
     def __init__(self, file_list, seq_dur, sr, on_too_short='raise'):
         super().__init__()
         self.file_list = file_list
@@ -69,13 +47,7 @@ class WavDataset(torch.utils.data.Dataset):
         self.on_too_short = on_too_short
 
     def __getitem__(self, index):
-        file = self.file_list[index]
-        if isinstance(file, dict):
-            return {instrument: self.read_file_and_crop(file[instrument]) for instrument in file.keys()}
-        else:
-            return self.read_file_and_crop(file)
-
-    def read_file_and_crop(self, fn_base):
+        fn_base = self.file_list[index]
         fn_wav = '{}.wav'.format(fn_base)
 
         # XXX: here, we read the entire file from disk and then do random crop

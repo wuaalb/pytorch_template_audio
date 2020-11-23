@@ -63,6 +63,20 @@ def load_checkpoint(fn_checkpoint, model, model_ema, optimizer, lr_scheduler):
 
     return step
 
+def load_checkpoint_inference(fn_checkpoint, model, use_ema):
+    # load file
+    checkpoint_dict = torch.load(fn_checkpoint)
+
+    # load data into components
+    if use_ema:
+        model.load_state_dict(checkpoint_dict['model_ema'])
+    else:
+        model.load_state_dict(checkpoint_dict['model'])
+
+    step = checkpoint_dict['step']
+
+    return step
+
 
 # e.g. backup_source(out_dir / 'source.zip', ['./*.py', './models/*.py'])
 def backup_source(fn_out_zip, path_pattern_list):
