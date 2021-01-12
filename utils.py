@@ -22,7 +22,7 @@ def check_step_consistency(optimizer, lr_scheduler, step):
             if p.grad == None:
                 continue
             if optimizer.state[p]['step'] != step:
-                raise IOError('optimizer step and loop step inconsistent')
+                raise IOError('optimizer step and loop step inconsistent (opt step = {:d}, global step = {:d})'.format(optimizer.state[p]['step'], step))
 
     if lr_scheduler:
         if lr_scheduler.last_epoch != step:
@@ -47,6 +47,7 @@ def save_checkpoint(fn_checkpoint, model, model_ema, optimizer, lr_scheduler, st
 
 def load_checkpoint(fn_checkpoint, model, model_ema, optimizer, lr_scheduler):
     # load file
+    fn_checkpoint = str(fn_checkpoint)  # XXX: issue with torch.load() not working with pathlib.Path
     checkpoint_dict = torch.load(fn_checkpoint)
 
     # load data into components
@@ -65,6 +66,7 @@ def load_checkpoint(fn_checkpoint, model, model_ema, optimizer, lr_scheduler):
 
 def load_checkpoint_inference(fn_checkpoint, model, use_ema):
     # load file
+    fn_checkpoint = str(fn_checkpoint)  # XXX: issue with torch.load() not working with pathlib.Path
     checkpoint_dict = torch.load(fn_checkpoint)
 
     # load data into components

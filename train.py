@@ -49,6 +49,12 @@ def train(args):
     # backup source code
     backup_source(outdir / 'source.zip', ['./*.py'])
 
+    # create model
+    model = create_model()
+    print('Num. parameters: {:,d}'.format(count_parameters(model)))
+
+    model.to(device)
+
     # dataset
     file_list_trn = load_file_list(dsetdir / 'filelist_trn.txt')
     print('Train set: {:,d} examples'.format(len(file_list_trn)))
@@ -61,12 +67,6 @@ def train(args):
     dset_val = WavDataset(file_list_val, hparams.seq_dur, hparams.sr)
     loader_val = torch.utils.data.DataLoader(dset_val, batch_size=hparams.batch_size, shuffle=False, drop_last=True, num_workers=hparams.n_workers, worker_init_fn=worker_init_fn)
     # XXX: also drop_last=True for simplicity, however as here shuffle=False, the last partial batch of the validation set is "lost"
-
-    # create model
-    model = create_model()
-    print('Num. parameters: {:,d}'.format(count_parameters(model)))
-
-    model.to(device)
 
     # optimizer
     optimizer = optim.Adam(model.parameters(), lr=hparams.learning_rate, **hparams.opt_params)
@@ -143,7 +143,7 @@ def train(args):
 
             loss = compute_loss(x, model)
 
-            # optimizaiton step
+            # optimization step
             optimizer.zero_grad()
             loss.backward()
 
