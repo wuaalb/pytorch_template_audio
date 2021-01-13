@@ -105,6 +105,9 @@ def train(args):
 
         print('Resuming training from checkpoint {}...'.format(fn_checkpoint))
         global_step = load_checkpoint(fn_checkpoint, model, model_ema, optimizer, lr_scheduler)
+
+        if hparams.ema_decay > 0:
+            ema = EMA(model, model_ema, hparams.ema_decay, hparams.ema_warmup_steps)
     else:
         global_step = 0  # train from scratch
 
