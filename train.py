@@ -59,13 +59,13 @@ def train(args):
     file_list_trn = load_file_list(dsetdir / 'filelist_trn.txt')
     print('Train set: {:,d} examples'.format(len(file_list_trn)))
     dset_trn = WavDataset(file_list_trn, hparams.seq_dur, hparams.sr)
-    loader_trn = torch.utils.data.DataLoader(dset_trn, batch_size=hparams.batch_size, shuffle=True, drop_last=True, num_workers=hparams.n_workers, worker_init_fn=worker_init_fn)
+    loader_trn = torch.utils.data.DataLoader(dset_trn, batch_size=hparams.batch_size, shuffle=True, drop_last=True, num_workers=hparams.n_workers, worker_init_fn=worker_init_fn, pin_memory=True)
     # XXX: drop_last=True because code below for averaging losses assumes all steps to have equal weight (minor issue)
     
     file_list_val = load_file_list(dsetdir / 'filelist_val.txt')
     print('Validation set: {:,d} examples'.format(len(file_list_val)))
     dset_val = WavDataset(file_list_val, hparams.seq_dur, hparams.sr)
-    loader_val = torch.utils.data.DataLoader(dset_val, batch_size=hparams.batch_size, shuffle=False, drop_last=True, num_workers=hparams.n_workers, worker_init_fn=worker_init_fn)
+    loader_val = torch.utils.data.DataLoader(dset_val, batch_size=hparams.batch_size, shuffle=False, drop_last=True, num_workers=hparams.n_workers, worker_init_fn=worker_init_fn, pin_memory=True)
     # XXX: also drop_last=True for simplicity, however as here shuffle=False, the last partial batch of the validation set is "lost"
 
     # optimizer
